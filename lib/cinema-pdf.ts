@@ -229,74 +229,109 @@ async function buildDataCanvas(p: CinemaPage, width: number, height: number) {
 
   const TOPBAR = 34;
   const METAH = 22;
+  const topSectionH = Math.floor(height * 0.5);
+  const bottomSectionH = height - TOPBAR - METAH - topSectionH;
+  const scopeLabelH = 16;
   const IREH = 22;
-  const BOT = Math.floor(height * 0.36);
-  const IMGZONE = height - TOPBAR - METAH - IREH - BOT;
 
   drawHdrBar(ctx, p.meta, width, TOPBAR);
   drawMetaBar(ctx, p.meta, width, TOPBAR, METAH);
 
-  const y0 = TOPBAR + METAH;
-  const HALF = Math.floor(width / 2) - 10;
-  const PAL = 18;
-  const origW = HALF - PAL;
-  const scaleO = Math.min(origW / p.W, IMGZONE / p.H);
-  const dw = Math.floor(p.W * scaleO);
-  const dh = Math.floor(p.H * scaleO);
-  ctx.drawImage(p.imgEl, 0, y0, dw, dh);
-  drawPalette(ctx, p, HALF - PAL, y0, PAL, dh);
+  const yTop = TOPBAR + METAH;
+  const halfW = Math.floor(width / 2);
+  const paletteW = 18;
+  const topPad = 8;
+  const usableTopH = topSectionH - topPad * 2;
 
-  ctx.strokeStyle = "#1a1a1a";
-  ctx.lineWidth = 1;
-  ctx.beginPath();
-  ctx.moveTo(HALF, y0);
-  ctx.lineTo(HALF, y0 + IMGZONE);
-  ctx.stroke();
+  const leftX = 0;
+  const leftW = halfW;
+  const leftImgW = leftW - paletteW;
+  const leftScale = Math.min(leftImgW / p.W, usableTopH / p.H);
+  const leftDrawW = Math.floor(p.W * leftScale);
+  const leftDrawH = Math.floor(p.H * leftScale);
+  const leftImgX = leftX + Math.floor((leftImgW - leftDrawW) / 2);
+  const leftImgY = yTop + Math.floor((usableTopH - leftDrawH) / 2) + topPad;
+  ctx.drawImage(p.imgEl, leftImgX, leftImgY, leftDrawW, leftDrawH);
+  drawPalette(ctx, p, leftX + leftW - paletteW, leftImgY, paletteW, leftDrawH);
 
-  const scaleG = Math.min((width - HALF) / p.W, IMGZONE / p.H);
-  const gw = Math.floor(p.W * scaleG);
-  const gh = Math.floor(p.H * scaleG);
-  ctx.drawImage(p.imgEl, HALF, y0, gw, gh);
+  const rightX = halfW;
+  const rightW = width - halfW;
+  const rightScale = Math.min(rightW / p.W, usableTopH / p.H);
+  const rightDrawW = Math.floor(p.W * rightScale);
+  const rightDrawH = Math.floor(p.H * rightScale);
+  const rightImgX = rightX + Math.floor((rightW - rightDrawW) / 2);
+  const rightImgY = yTop + Math.floor((usableTopH - rightDrawH) / 2) + topPad;
+  ctx.drawImage(p.imgEl, rightImgX, rightImgY, rightDrawW, rightDrawH);
   ctx.strokeStyle = "rgba(255,255,255,0.55)";
   ctx.lineWidth = 1.5;
   for (let i = 1; i < 3; i++) {
     ctx.beginPath();
-    ctx.moveTo(HALF + (gw * i) / 3, y0);
-    ctx.lineTo(HALF + (gw * i) / 3, y0 + gh);
+    ctx.moveTo(rightImgX + (rightDrawW * i) / 3, rightImgY);
+    ctx.lineTo(rightImgX + (rightDrawW * i) / 3, rightImgY + rightDrawH);
     ctx.stroke();
     ctx.beginPath();
-    ctx.moveTo(HALF, y0 + (gh * i) / 3);
-    ctx.lineTo(HALF + gw, y0 + (gh * i) / 3);
+    ctx.moveTo(rightImgX, rightImgY + (rightDrawH * i) / 3);
+    ctx.lineTo(rightImgX + rightDrawW, rightImgY + (rightDrawH * i) / 3);
     ctx.stroke();
   }
-
-  const ireY = y0 + IMGZONE;
-  drawIREbar(ctx, width, ireY, IREH);
-
-  const scopeY = ireY + IREH;
-  const SW = Math.floor(width / 3);
-
-  const fcC = await buildFCCanvas(p);
-  ctx.drawImage(fcC, 0, scopeY, SW, BOT);
-  drawScopeLabel(ctx, "FALSE COLOR", 0, scopeY);
-
-  const wfC = await buildWFCanvas(p, SW, BOT);
-  ctx.drawImage(wfC, SW, scopeY, SW, BOT);
-  drawScopeLabel(ctx, "WAVEFORM", SW, scopeY);
-
-  const vsC = await buildVSCanvas(p, width - SW * 2, BOT);
-  ctx.drawImage(vsC, SW * 2, scopeY, width - SW * 2, BOT);
-  drawScopeLabel(ctx, "VECTORSCOPE", SW * 2, scopeY);
 
   ctx.strokeStyle = "#1a1a1a";
   ctx.lineWidth = 1;
   ctx.beginPath();
-  ctx.moveTo(SW, scopeY);
-  ctx.lineTo(SW, height);
+  ctx.moveTo(halfW, yTop);
+  ctx.lineTo(halfW, yTop + topSectionH);
   ctx.stroke();
   ctx.beginPath();
-  ctx.moveTo(SW * 2, scopeY);
-  ctx.lineTo(SW * 2, height);
+  ctx.moveTo(0, yTop + topSectionH);
+  ctx.lineTo(width, yTop + topSectionH);
+  ctx.stroke();
+
+  const scopeY = yTop + topSectionH;
+  const scopeW = Math.floor(width / 3);
+  const fcX = 0;
+  const wfX = scopeW;
+  const vsX = scopeW * 2;
+  const vsW = width - vsX;
+
+  const fcLabelY = scopeY + 2;
+  const wfLabelY = scopeY + 2;
+  const vsLabelY = scopeY + 2;
+  drawScopeLabel(ctx, "FALSE COLOR", fcX, fcLabelY);
+  drawScopeLabel(ctx, "WAVEFORM", wfX, wfLabelY);
+  drawScopeLabel(ctx, "VECTORSCOPE", vsX, vsLabelY);
+
+  const ireY = scopeY + scopeLabelH;
+  drawIREbar(ctx, scopeW, ireY, IREH);
+
+  const scopeInnerY = ireY + IREH + 4;
+  const scopeInnerH = Math.max(20, bottomSectionH - scopeLabelH - IREH - 8);
+
+  const fcC = await buildFCCanvas(p);
+  const fcScale = Math.min(scopeW / p.W, scopeInnerH / p.H);
+  const fcDrawW = Math.floor(p.W * fcScale);
+  const fcDrawH = Math.floor(p.H * fcScale);
+  const fcDrawX = fcX + Math.floor((scopeW - fcDrawW) / 2);
+  const fcDrawY = scopeInnerY + Math.floor((scopeInnerH - fcDrawH) / 2);
+  ctx.drawImage(fcC, fcDrawX, fcDrawY, fcDrawW, fcDrawH);
+
+  const wfC = await buildWFCanvas(p, scopeW, scopeInnerH);
+  ctx.drawImage(wfC, wfX, scopeInnerY, scopeW, scopeInnerH);
+
+  const vsSize = Math.min(vsW, scopeInnerH);
+  const vsC = await buildVSCanvas(p, vsSize, vsSize);
+  const vsDrawX = vsX + Math.floor((vsW - vsSize) / 2);
+  const vsDrawY = scopeInnerY + Math.floor((scopeInnerH - vsSize) / 2);
+  ctx.drawImage(vsC, vsDrawX, vsDrawY, vsSize, vsSize);
+
+  ctx.strokeStyle = "#1a1a1a";
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(wfX, scopeY);
+  ctx.lineTo(wfX, height);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(vsX, scopeY);
+  ctx.lineTo(vsX, height);
   ctx.stroke();
 
   return c;

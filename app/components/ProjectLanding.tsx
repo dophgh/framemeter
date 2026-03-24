@@ -8,7 +8,7 @@ import {
   normalizeProjectNameInput,
   savePersistedProject,
 } from "@/lib/cinema-persistence";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 export default function ProjectLanding({
   onOpenProject,
@@ -16,14 +16,17 @@ export default function ProjectLanding({
   onOpenProject: (name: string) => void;
 }) {
   const [newName, setNewName] = useState("");
-  const [tick, setTick] = useState(0);
+  const [projects, setProjects] = useState<
+    { name: string; updatedAt: string }[]
+  >([]);
 
-  const projects = useMemo(() => {
-    void tick;
-    return listProjectsMeta();
-  }, [tick]);
+  const refresh = useCallback(() => {
+    setProjects(listProjectsMeta());
+  }, []);
 
-  const refresh = useCallback(() => setTick((t) => t + 1), []);
+  useEffect(() => {
+    refresh();
+  }, [refresh]);
 
   const handleCreate = () => {
     const name = normalizeProjectNameInput(newName);
@@ -69,16 +72,16 @@ export default function ProjectLanding({
   return (
     <div className="flex min-h-full flex-col items-center justify-center gap-10 bg-black px-6 py-16 text-[#bbb]">
       <div className="text-center">
-        <h1 className="text-[11px] tracking-[6px] text-[#3a3a3a]">
+        <h1 className="text-[11px] tracking-[6px] text-[#888]">
           FRAME METER
         </h1>
-        <p className="mt-3 text-[9px] tracking-[2px] text-[#252525]">
+        <p className="mt-3 text-[9px] tracking-[2px] text-[#888]">
           프로젝트 단위로 작업이 저장됩니다 (이 브라우저 / 이 기기)
         </p>
       </div>
 
       <div className="w-full max-w-[360px] border border-[#1c1c1c] bg-[#050505] p-5">
-        <div className="mb-3 text-[8px] tracking-[3px] text-[#252525]">
+        <div className="mb-3 text-[8px] tracking-[3px] text-[#888]">
           NEW PROJECT
         </div>
         <input
@@ -98,11 +101,11 @@ export default function ProjectLanding({
       </div>
 
       <div className="w-full max-w-[360px]">
-        <div className="mb-3 text-[8px] tracking-[3px] text-[#252525]">
+        <div className="mb-3 text-[8px] tracking-[3px] text-[#888]">
           OPEN PROJECT
         </div>
         {projects.length === 0 ? (
-          <p className="text-[9px] text-[#1c1c1c]">
+          <p className="text-[9px] text-[#888]">
             저장된 프로젝트가 없습니다.
           </p>
         ) : (

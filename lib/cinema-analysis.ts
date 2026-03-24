@@ -137,7 +137,7 @@ export function drawWF(p: CinemaPage, c: HTMLCanvasElement) {
 
 export function drawVS(p: CinemaPage, c: HTMLCanvasElement) {
   if (!p.px) return;
-  const S = Math.min(c.clientWidth || 190, c.clientHeight || 190, 190);
+  const S = Math.max(120, Math.min(c.clientWidth || 190, c.clientHeight || 190));
   c.width = S;
   c.height = S;
   const cx = c.getContext("2d")!;

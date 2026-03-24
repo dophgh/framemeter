@@ -696,7 +696,7 @@ export default function CinemaAnalyzerApp({
       <div className="flex h-full min-h-[240px] flex-col items-center justify-center bg-black text-[#444]">
         <p className="text-[9px] tracking-[3px]">LOADING PROJECT…</p>
         <p
-          className="mt-2 max-w-[min(90%,320px)] truncate text-[8px] text-[#2a2a2a]"
+          className="mt-2 max-w-[min(90%,320px)] truncate text-[8px] text-[#888]"
           title={projectName}
         >
           {projectName}
@@ -724,18 +724,18 @@ export default function CinemaAnalyzerApp({
       />
 
       <header className="flex h-[38px] shrink-0 items-center border-b border-[#1c1c1c] bg-[#030303]">
-        <div className="flex h-full items-center border-r border-[#1c1c1c] px-[14px] text-[11px] tracking-[4px] text-[#3a3a3a]">
+        <div className="flex h-full items-center border-r border-[#1c1c1c] px-[14px] text-[11px] tracking-[4px] text-[#888]">
           FRAME METER
         </div>
         <button
           type="button"
           onClick={handleLeaveProject}
-          className="h-full shrink-0 border-r border-[#1c1c1c] px-[12px] text-[9px] tracking-[1px] text-[#666] hover:bg-[#0d0d0d] hover:text-[#ccc]"
+          className="h-full shrink-0 border-r border-[#1c1c1c] px-[12px] text-[9px] tracking-[1px] text-[#888] hover:bg-[#0d0d0d] hover:text-[#fff]"
         >
           ← PROJECTS
         </button>
         <div
-          className="hidden h-full max-w-[min(28vw,200px)] shrink-0 items-center overflow-hidden text-ellipsis border-r border-[#1c1c1c] px-3 text-[8px] text-[#606060] sm:flex"
+          className="hidden h-full max-w-[min(28vw,200px)] shrink-0 items-center overflow-hidden text-ellipsis border-r border-[#1c1c1c] px-3 text-[8px] text-[#888] sm:flex"
           title={projectName}
         >
           {projectName}
@@ -743,7 +743,7 @@ export default function CinemaAnalyzerApp({
         <button
           type="button"
           onClick={handleNewPage}
-          className="h-full border-r border-[#1c1c1c] bg-[#0d0d0d] px-[14px] text-[9px] tracking-[2px] text-[#666] hover:bg-[#1a1a1a] hover:text-white"
+          className="h-full border-r border-[#1c1c1c] bg-[#0d0d0d] px-[14px] text-[9px] tracking-[2px] text-[#888] hover:bg-[#1a1a1a] hover:text-white"
         >
           ⊕ NEW PAGE
         </button>
@@ -755,7 +755,7 @@ export default function CinemaAnalyzerApp({
             className={`h-full border-r border-[#1c1c1c] px-[14px] text-[9px] tracking-[2px] hover:bg-[#0d0d0d] hover:text-[#ccc] ${
               curTab === t
                 ? "border-b-2 border-b-white bg-[#111] text-white"
-                : "bg-transparent text-[#555]"
+                : "bg-transparent text-[#666]"
             }`}
           >
             {t.toUpperCase()}
@@ -766,14 +766,14 @@ export default function CinemaAnalyzerApp({
           type="button"
           disabled={exportBusy}
           onClick={runExport}
-          className="h-full border-l border-[#1c1c1c] px-[14px] text-[9px] tracking-[2px] text-[#444] transition-colors hover:text-[#ccc] disabled:pointer-events-none disabled:text-[#888]"
+          className="h-full border-l border-[#1c1c1c] px-[14px] text-[9px] tracking-[2px] text-[#888] transition-colors hover:text-[#fff] disabled:pointer-events-none disabled:text-[#666]"
         >
           {exportBusy ? "GENERATING..." : "PDF EXPORT ↗"}
         </button>
       </header>
 
       <div className="flex h-[26px] shrink-0 items-center gap-[10px] overflow-hidden border-b border-[#111] bg-[#010101] px-2 text-[9px]">
-        <div className="shrink-0 whitespace-nowrap text-[#4e4e4e]">
+        <div className="shrink-0 whitespace-nowrap text-[#ccc]">
           {m.title ? `< ${m.title} >` : "< FILM TITLE >"}
         </div>
         {[
@@ -790,15 +790,15 @@ export default function CinemaAnalyzerApp({
           ["Camera", m.camera],
         ].map(([k, v]) => (
           <div key={String(k)} className="shrink-0 whitespace-nowrap">
-            <span className="text-[#2e2e2e]">{k} : </span>
-            <span className="text-[#5a5a5a]">{v || "—"}</span>
+            <span className="text-[#888]">{k} : </span>
+            <span className="text-[#ccc]">{v || "—"}</span>
           </div>
         ))}
       </div>
 
       <div className="flex min-h-0 flex-1 overflow-hidden">
         <aside className="flex w-[158px] shrink-0 flex-col overflow-hidden border-r border-[#181818] bg-[#050505]">
-          <div className="flex shrink-0 items-center justify-between border-b border-[#0f0f0f] px-2 py-[7px] pb-[5px] text-[7px] tracking-[2px] text-[#252525]">
+          <div className="flex shrink-0 items-center justify-between border-b border-[#0f0f0f] px-2 py-[7px] pb-[5px] text-[7px] tracking-[2px] text-[#888]">
             <span>DOCUMENT</span>
             <span>
               {pages.length} PAGE{pages.length !== 1 ? "S" : ""}
@@ -821,11 +821,11 @@ export default function CinemaAnalyzerApp({
                   i === curIdx ? "border-[#777]" : ""
                 }`}
               >
-                <span className="absolute left-1 top-[3px] z-[2] text-[7px] leading-none text-[#252525]">
+                <span className="absolute left-1 top-[3px] z-[2] text-[7px] leading-none text-[#888]">
                   {i + 1}
                 </span>
                 <SlideThumb thumb={pg.thumb} />
-                <div className="overflow-hidden border-t border-[#101010] px-[5px] py-[3px] text-[7px] tracking-[1px] text-[#2e2e2e] text-ellipsis whitespace-nowrap">
+                <div className="overflow-hidden border-t border-[#101010] px-[5px] py-[3px] text-[7px] tracking-[1px] text-[#888] text-ellipsis whitespace-nowrap">
                   {pg.meta.title || "UNTITLED"}
                 </div>
                 <button
@@ -842,7 +842,7 @@ export default function CinemaAnalyzerApp({
           <button
             type="button"
             onClick={handleNewPage}
-            className="flex shrink-0 cursor-pointer items-center justify-center border-t border-[#0f0f0f] py-[9px] text-[8px] tracking-[2px] text-[#252525] transition-colors hover:bg-[#0d0d0d] hover:text-[#aaa]"
+            className="flex shrink-0 cursor-pointer items-center justify-center border-t border-[#0f0f0f] py-[9px] text-[8px] tracking-[2px] text-[#888] transition-colors hover:bg-[#0d0d0d] hover:text-[#ccc]"
           >
             ⊕ &nbsp;ADD PAGE
           </button>
@@ -855,18 +855,18 @@ export default function CinemaAnalyzerApp({
               className="group flex flex-1 cursor-pointer flex-col items-center justify-center gap-4"
               onClick={() => fileRef.current?.click()}
             >
-              <div className="text-[9px] tracking-[4px] text-[#1a1a1a]">
+              <div className="text-[9px] tracking-[4px] text-[#888]">
                 CINEMA IMAGE ANALYSIS TOOL
               </div>
               <div className="dropbox border border-dashed border-[#1a1a1a] px-[65px] py-[38px] text-center transition-[border-color] duration-200 group-hover:border-[#2e2e2e]">
-                <div className="mb-2 text-[10px] tracking-[3px] text-[#282828]">
+                <div className="mb-2 text-[10px] tracking-[3px] text-[#ccc]">
                   CLICK TO IMPORT IMAGE
                 </div>
-                <div className="text-[9px] text-[#1c1c1c]">
+                <div className="text-[9px] text-[#888]">
                   JPG · PNG · TIFF · WEBP
                 </div>
               </div>
-              <div className="text-[8px] tracking-[2px] text-[#181818]">
+              <div className="text-[8px] tracking-[2px] text-[#888]">
                 OR DRAG & DROP
               </div>
             </button>
@@ -874,8 +874,8 @@ export default function CinemaAnalyzerApp({
 
           {!showWelcome && curTab === "data" && p ? (
             <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-              <div className="flex max-h-[35vh] min-h-0 shrink-0 overflow-hidden border-b border-[#0f0f0f]">
-                <div className="flex min-w-0 shrink-0 flex-row items-stretch border-r border-[#0f0f0f]">
+              <div className="flex min-h-0 flex-[1_1_50%] overflow-hidden border-b border-[#0f0f0f]">
+                <div className="flex min-w-0 flex-1 flex-row items-stretch border-r border-[#0f0f0f]">
                   <div className="flex min-w-0 flex-1 items-center justify-center overflow-hidden">
                     <RasterPreviewFrame W={p.W} H={p.H}>
                       <canvas
@@ -905,24 +905,25 @@ export default function CinemaAnalyzerApp({
                   </RasterPreviewFrame>
                 </div>
               </div>
-              <div className="flex shrink-0 flex-wrap items-center gap-[2px] border-b border-[#0f0f0f] bg-[#020202] px-[6px] py-[3px]">
-                {IRE_VALS.map((v, i) => (
-                  <div
-                    key={v}
-                    className="border-none px-[5px] py-px text-[8px]"
-                    style={{
-                      background: IRE_BG[i],
-                      color: IRE_FG[i],
-                    }}
-                  >
-                    {v}
-                  </div>
-                ))}
-              </div>
-              <div className="flex min-h-0 flex-1 overflow-hidden">
+
+              <div className="flex min-h-0 flex-[1_1_50%] overflow-hidden">
                 <div className="scope-box flex min-w-0 flex-1 flex-col overflow-hidden border-r border-[#0f0f0f]">
-                  <div className="shrink-0 bg-[#020202] px-[5px] py-[3px] text-[7px] tracking-[2px] text-[#252525]">
+                  <div className="shrink-0 bg-[#020202] px-[5px] py-[3px] text-[7px] tracking-[2px] text-[#888]">
                     FALSE COLOR
+                  </div>
+                  <div className="flex shrink-0 flex-wrap items-center gap-[2px] border-b border-[#0f0f0f] bg-[#020202] px-[6px] py-[3px]">
+                    {IRE_VALS.map((v, i) => (
+                      <div
+                        key={v}
+                        className="border-none px-[5px] py-px text-[8px]"
+                        style={{
+                          background: IRE_BG[i],
+                          color: IRE_FG[i],
+                        }}
+                      >
+                        {v}
+                      </div>
+                    ))}
                   </div>
                   <div className="relative min-h-0 flex-1">
                     <RasterScopeFrame W={p.W} H={p.H}>
@@ -935,16 +936,20 @@ export default function CinemaAnalyzerApp({
                   </div>
                 </div>
                 <div className="scope-box flex min-w-0 flex-1 flex-col overflow-hidden border-r border-[#0f0f0f]">
-                  <div className="shrink-0 bg-[#020202] px-[5px] py-[3px] text-[7px] tracking-[2px] text-[#252525]">
+                  <div className="shrink-0 bg-[#020202] px-[5px] py-[3px] text-[7px] tracking-[2px] text-[#888]">
                     WAVEFORM
                   </div>
                   <canvas ref={wfRef} className="block w-full flex-1" />
                 </div>
-                <div className="scope-box flex w-[190px] shrink-0 flex-col overflow-hidden">
-                  <div className="shrink-0 bg-[#020202] px-[5px] py-[3px] text-[7px] tracking-[2px] text-[#252525]">
+                <div className="scope-box flex min-w-0 flex-1 flex-col overflow-hidden">
+                  <div className="shrink-0 bg-[#020202] px-[5px] py-[3px] text-[7px] tracking-[2px] text-[#888]">
                     VECTORSCOPE
                   </div>
-                  <canvas ref={vsRef} className="block w-full flex-1" />
+                  <div className="flex min-h-0 flex-1 items-center justify-center overflow-hidden p-[4px]">
+                    <div className="aspect-square h-full w-auto max-w-full">
+                      <canvas ref={vsRef} className="block h-full w-full" />
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1041,7 +1046,7 @@ export default function CinemaAnalyzerApp({
                   className={`whitespace-nowrap border px-[10px] py-0.5 text-[8px] tracking-[1px] ${
                     noteTool === "marker"
                       ? "border-[#404040] bg-[#1a1a1a] text-white"
-                      : "border-[#181818] bg-[#0d0d0d] text-[#555] hover:border-[#444] hover:text-[#ccc]"
+                      : "border-[#181818] bg-[#0d0d0d] text-[#666] hover:border-[#444] hover:text-[#ccc]"
                   }`}
                 >
                   ● MARKER
@@ -1070,7 +1075,7 @@ export default function CinemaAnalyzerApp({
                   className={`whitespace-nowrap border px-[10px] py-0.5 text-[8px] tracking-[1px] ${
                     noteTool === "draw"
                       ? "border-[#404040] bg-[#1a1a1a] text-white"
-                      : "border-[#181818] bg-[#0d0d0d] text-[#555] hover:border-[#444] hover:text-[#ccc]"
+                      : "border-[#181818] bg-[#0d0d0d] text-[#666] hover:border-[#444] hover:text-[#ccc]"
                   }`}
                 >
                   ✏ DRAW
@@ -1110,7 +1115,7 @@ export default function CinemaAnalyzerApp({
                   className={`whitespace-nowrap border px-[10px] py-0.5 text-[8px] tracking-[1px] ${
                     noteTool === "text"
                       ? "border-[#404040] bg-[#1a1a1a] text-white"
-                      : "border-[#181818] bg-[#0d0d0d] text-[#555] hover:border-[#444] hover:text-[#ccc]"
+                      : "border-[#181818] bg-[#0d0d0d] text-[#666] hover:border-[#444] hover:text-[#ccc]"
                   }`}
                 >
                   T TEXT
@@ -1136,18 +1141,18 @@ export default function CinemaAnalyzerApp({
                 <button
                   type="button"
                   onClick={undoStroke}
-                  className="whitespace-nowrap border border-[#181818] bg-[#0d0d0d] px-[10px] py-0.5 text-[8px] tracking-[1px] text-[#555] hover:border-[#444] hover:text-[#ccc]"
+                  className="whitespace-nowrap border border-[#181818] bg-[#0d0d0d] px-[10px] py-0.5 text-[8px] tracking-[1px] text-[#666] hover:border-[#444] hover:text-[#ccc]"
                 >
                   ↩ UNDO
                 </button>
                 <button
                   type="button"
                   onClick={clearNoteAll}
-                  className="whitespace-nowrap border border-[#181818] bg-[#0d0d0d] px-[10px] py-0.5 text-[8px] tracking-[1px] text-[#555] hover:border-[#444] hover:text-[#ccc]"
+                  className="whitespace-nowrap border border-[#181818] bg-[#0d0d0d] px-[10px] py-0.5 text-[8px] tracking-[1px] text-[#666] hover:border-[#444] hover:text-[#ccc]"
                 >
                   ✕ CLEAR ALL
                 </button>
-                <span className="min-w-0 flex-1 text-[8px] tracking-[1px] text-[#252525]">
+                <span className="min-w-0 flex-1 text-[8px] tracking-[1px] text-[#888]">
                   {noteTool === "draw"
                     ? "DRAW MODE — DRAG TO DRAW"
                     : noteTool === "text"
@@ -1156,7 +1161,7 @@ export default function CinemaAnalyzerApp({
                 </span>
               </div>
               <div className="min-h-0 flex-1 overflow-y-auto px-[14px] py-[10px]">
-                <div className="mb-2 text-[7px] tracking-[2px] text-[#252525]">
+                <div className="mb-2 text-[7px] tracking-[2px] text-[#888]">
                   NOTE
                 </div>
                 {p.markers.map((mkr, mi) => (
@@ -1171,11 +1176,11 @@ export default function CinemaAnalyzerApp({
                       }}
                       aria-hidden
                     />
-                    <span className="min-w-[15px] pt-[3px] text-[9px] text-[#333]">
+                    <span className="min-w-[15px] pt-[3px] text-[9px] text-[#888]">
                       {mkr.n})
                     </span>
                     <input
-                      className="flex-1 border-0 border-b border-[#141414] bg-transparent py-0.5 text-[9px] leading-[1.7] text-[#999] outline-none placeholder:text-[#222] focus:border-[#333] focus:text-[#ccc]"
+                      className="flex-1 border-0 border-b border-[#141414] bg-transparent py-0.5 text-[9px] leading-[1.7] text-[#ccc] outline-none placeholder:text-[#888] focus:border-[#666] focus:text-[#fff]"
                       placeholder={`마커 ${mkr.n} 노트...`}
                       value={mkr.text}
                       onChange={(e) => updateMarkerText(mi, e.target.value)}
@@ -1183,7 +1188,7 @@ export default function CinemaAnalyzerApp({
                   </div>
                 ))}
                 {!p.markers.length ? (
-                  <div className="text-[9px] text-[#1c1c1c]">
+                  <div className="text-[9px] text-[#888]">
                     마커를 추가하면 노트를 작성할 수 있습니다.
                   </div>
                 ) : null}
@@ -1193,7 +1198,7 @@ export default function CinemaAnalyzerApp({
 
           {curTab === "meta" ? (
             <div className="min-h-0 flex-1 overflow-y-auto p-5">
-              <div className="mb-[14px] text-[8px] tracking-[3px] text-[#252525]">
+              <div className="mb-[14px] text-[8px] tracking-[3px] text-[#888]">
                 METADATA EDIT
               </div>
               <div className="grid max-w-[580px] grid-cols-2 gap-[11px]">
@@ -1284,7 +1289,7 @@ export default function CinemaAnalyzerApp({
               <button
                 type="button"
                 onClick={saveMeta}
-                className="mt-[14px] border border-[#1e1e1e] bg-[#111] px-[18px] py-[5px] text-[8px] tracking-[2px] text-[#888] hover:border-[#444] hover:text-white"
+                className="mt-[14px] border border-[#1e1e1e] bg-[#111] px-[18px] py-[5px] text-[8px] tracking-[2px] text-[#ccc] hover:border-[#666] hover:text-white"
               >
                 APPLY →
               </button>
@@ -1563,14 +1568,14 @@ function MetaField({
 }) {
   return (
     <label className={`block ${className}`}>
-      <span className="mb-[3px] block text-[7px] tracking-[1px] text-[#2a2a2a]">
+      <span className="mb-[3px] block text-[7px] tracking-[1px] text-[#888]">
         {label}
       </span>
       <input
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="w-full border border-[#131313] bg-[#060606] px-[6px] py-[5px] text-[9px] text-[#999] outline-none focus:border-[#333] focus:text-[#ccc]"
+        className="w-full border border-[#131313] bg-[#060606] px-[6px] py-[5px] text-[9px] text-[#ccc] outline-none placeholder:text-[#888] focus:border-[#666] focus:text-[#fff]"
       />
     </label>
   );

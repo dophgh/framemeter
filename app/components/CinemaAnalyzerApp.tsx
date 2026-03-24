@@ -8,7 +8,7 @@ import {
   drawVS,
   drawWF,
 } from "@/lib/cinema-analysis";
-import { IRE_BG, IRE_FG, IRE_VALS } from "@/lib/cinema-constants";
+import { IRE_BANDS, IRE_BG, IRE_FG } from "@/lib/cinema-constants";
 import { exportCinemaPdf } from "@/lib/cinema-pdf";
 import {
   loadPersistedProject,
@@ -1073,16 +1073,17 @@ export default function CinemaAnalyzerApp({
                     FALSE COLOR
                   </div>
                   <div className="flex shrink-0 flex-wrap items-center gap-[2px] border-b border-[#0f0f0f] bg-[#020202] px-[6px] py-[3px]">
-                    {IRE_VALS.map((v, i) => (
+                    {IRE_BANDS.map((band, i) => (
                       <div
-                        key={v}
-                        className="border-none px-[5px] py-px text-[8px]"
+                        key={`${band.min}-${band.max}`}
+                        className="flex min-w-[42px] flex-col items-center justify-center border-none px-[4px] py-[2px] text-[8px] leading-tight"
                         style={{
                           background: IRE_BG[i],
                           color: IRE_FG[i],
                         }}
                       >
-                        {v}
+                        <span className="text-[8px]">{band.label}</span>
+                        <span className="text-[7px] opacity-90">{band.stop}</span>
                       </div>
                     ))}
                   </div>

@@ -1,5 +1,5 @@
 import { jsPDF } from "jspdf";
-import { IRE_BG, IRE_FG, IRE_VALS } from "@/lib/cinema-constants";
+import { IRE_BANDS, IRE_BG, IRE_FG } from "@/lib/cinema-constants";
 import { fc, lm } from "@/lib/cinema-analysis";
 import { markerNumberTextColor, normalizeHex } from "@/lib/cinema-note-utils";
 import type { CinemaPage, FilmMeta } from "@/lib/cinema-types";
@@ -58,17 +58,19 @@ function drawMetaBar(ctx: CanvasRenderingContext2D, _m: FilmMeta, width: number,
 }
 
 function drawIREbar(ctx: CanvasRenderingContext2D, width: number, y: number, H: number) {
-  const n = IRE_VALS.length;
+  const n = IRE_BANDS.length;
   const cw = Math.floor(width / n);
-  IRE_VALS.forEach((v, i) => {
+  IRE_BANDS.forEach((band, i) => {
     const x = i * cw;
     ctx.fillStyle = IRE_BG[i];
     ctx.fillRect(x, y, cw, H);
     ctx.font = "8px Space Mono,monospace";
     ctx.fillStyle = IRE_FG[i];
     ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillText(String(v), x + cw / 2, y + H / 2);
+    ctx.textBaseline = "top";
+    ctx.fillText(band.label, x + cw / 2, y + 3);
+    ctx.font = "7px Space Mono,monospace";
+    ctx.fillText(band.stop, x + cw / 2, y + H - 10);
   });
 }
 

@@ -41,11 +41,18 @@ export type TextAnnotation = {
 
 export type CinemaPage = {
   id: number;
+  /** 분석/렌더링에 실제 사용하는 이미지 */
   imageURL: string | null;
   imgEl: HTMLImageElement | null;
   px: ImageData | null;
   W: number;
   H: number;
+  /** 사용자가 가져온 원본 이미지(보존용) */
+  sourceImageURL: string | null;
+  sourceW: number;
+  sourceH: number;
+  cropApplied: boolean;
+  cropRatioLabel: string | null;
   meta: FilmMeta;
   markers: Marker[];
   strokes: DrawStroke[];

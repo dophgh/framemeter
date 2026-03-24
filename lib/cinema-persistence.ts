@@ -14,6 +14,11 @@ export type PersistedPage = {
   imageDataUrl: string | null;
   W: number;
   H: number;
+  sourceImageDataUrl: string | null;
+  sourceW: number;
+  sourceH: number;
+  cropApplied: boolean;
+  cropRatioLabel: string | null;
   meta: FilmMeta;
   markers: Marker[];
   strokes: DrawStroke[];
@@ -94,6 +99,11 @@ function emptyPersistedPage(id: number): PersistedPage {
     imageDataUrl: null,
     W: 0,
     H: 0,
+    sourceImageDataUrl: null,
+    sourceW: 0,
+    sourceH: 0,
+    cropApplied: false,
+    cropRatioLabel: null,
     meta: defMeta(),
     markers: [],
     strokes: [],
@@ -144,6 +154,11 @@ export function serializePage(page: CinemaPage): PersistedPage {
     imageDataUrl,
     W: page.W,
     H: page.H,
+    sourceImageDataUrl: page.sourceImageURL,
+    sourceW: page.sourceW,
+    sourceH: page.sourceH,
+    cropApplied: page.cropApplied,
+    cropRatioLabel: page.cropRatioLabel,
     meta: { ...page.meta },
     markers: page.markers.map((m) => ({ ...m })),
     strokes: page.strokes.map((s) => ({
@@ -180,6 +195,11 @@ export async function persistedPagesToRuntime(
         px: null,
         W: 0,
         H: 0,
+        sourceImageURL: p.sourceImageDataUrl ?? null,
+        sourceW: p.sourceW ?? 0,
+        sourceH: p.sourceH ?? 0,
+        cropApplied: Boolean(p.cropApplied),
+        cropRatioLabel: p.cropRatioLabel ?? null,
         meta: { ...p.meta },
         markers: p.markers.map((m) => ({ ...m })),
         strokes: p.strokes.map((s) => ({
@@ -209,6 +229,11 @@ export async function persistedPagesToRuntime(
       px,
       W: p.W,
       H: p.H,
+      sourceImageURL: p.sourceImageDataUrl ?? p.imageDataUrl,
+      sourceW: p.sourceW ?? p.W,
+      sourceH: p.sourceH ?? p.H,
+      cropApplied: Boolean(p.cropApplied),
+      cropRatioLabel: p.cropRatioLabel ?? null,
       meta: { ...p.meta },
       markers: p.markers.map((m) => ({ ...m })),
       strokes: p.strokes.map((s) => ({

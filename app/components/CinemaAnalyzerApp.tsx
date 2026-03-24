@@ -44,6 +44,11 @@ function createEmptyPage(): CinemaPage {
     px: null,
     W: 0,
     H: 0,
+    sourceImageURL: null,
+    sourceW: 0,
+    sourceH: 0,
+    cropApplied: false,
+    cropRatioLabel: null,
     meta: defMeta(),
     markers: [],
     strokes: [],
@@ -51,6 +56,110 @@ function createEmptyPage(): CinemaPage {
     drawOverlaySize: null,
     thumb: null,
   };
+}
+
+function lineLumaStats(
+  data: Uint8ClampedArray,
+  w: number,
+  h: number,
+  axis: "row" | "col",
+  index: number,
+) {
+  const darkThreshold = 24;
+  const sampleStep = Math.max(1, Math.floor((axis === "row" ? w : h) / 640));
+  let count = 0;
+  let darkCount = 0;
+  let sum = 0;
+  let max = 0;
+  if (axis === "row") {
+    const off = index * w * 4;
+    for (let x = 0; x < w; x += sampleStep) {
+      const i = off + x * 4;
+      const l = 0.2126 * data[i] + 0.7152 * data[i + 1] + 0.0722 * data[i + 2];
+      sum += l;
+      if (l <= darkThreshold) darkCount++;
+      if (l > max) max = l;
+      count++;
+    }
+    return { avg: sum / Math.max(1, count), darkRatio: darkCount / Math.max(1, count), max };
+  }
+  for (let y = 0; y < h; y += sampleStep) {
+    const i = (y * w + index) * 4;
+    const l = 0.2126 * data[i] + 0.7152 * data[i + 1] + 0.0722 * data[i + 2];
+    sum += l;
+    if (l <= darkThreshold) darkCount++;
+    if (l > max) max = l;
+    count++;
+  }
+  return { avg: sum / Math.max(1, count), darkRatio: darkCount / Math.max(1, count), max };
+}
+
+function detectLetterboxCropRect(px: ImageData, w: number, h: number) {
+  const avgThreshold = 18;
+  const darkRatioThreshold = 0.97;
+  const maxPixelThreshold = 42;
+  const maxScanY = Math.floor(h * 0.28);
+  const maxScanX = Math.floor(w * 0.2);
+  const d = px.data;
+
+  let top = 0;
+  for (let y = 0; y < maxScanY; y++) {
+    const s = lineLumaStats(d, w, h, "row", y);
+    const isBlackLine =
+      s.avg <= avgThreshold &&
+      s.darkRatio >= darkRatioThreshold &&
+      s.max <= maxPixelThreshold;
+    if (!isBlackLine) break;
+    top++;
+  }
+
+  let bottom = 0;
+  for (let y = h - 1; y >= Math.max(0, h - maxScanY); y--) {
+    const s = lineLumaStats(d, w, h, "row", y);
+    const isBlackLine =
+      s.avg <= avgThreshold &&
+      s.darkRatio >= darkRatioThreshold &&
+      s.max <= maxPixelThreshold;
+    if (!isBlackLine) break;
+    bottom++;
+  }
+
+  let left = 0;
+  for (let x = 0; x < maxScanX; x++) {
+    const s = lineLumaStats(d, w, h, "col", x);
+    const isBlackLine =
+      s.avg <= avgThreshold &&
+      s.darkRatio >= darkRatioThreshold &&
+      s.max <= maxPixelThreshold;
+    if (!isBlackLine) break;
+    left++;
+  }
+
+  let right = 0;
+  for (let x = w - 1; x >= Math.max(0, w - maxScanX); x--) {
+    const s = lineLumaStats(d, w, h, "col", x);
+    const isBlackLine =
+      s.avg <= avgThreshold &&
+      s.darkRatio >= darkRatioThreshold &&
+      s.max <= maxPixelThreshold;
+    if (!isBlackLine) break;
+    right++;
+  }
+
+  const minStripY = Math.max(2, Math.floor(h * 0.006));
+  const minStripX = Math.max(2, Math.floor(w * 0.006));
+  if (top < minStripY) top = 0;
+  if (bottom < minStripY) bottom = 0;
+  if (left < minStripX) left = 0;
+  if (right < minStripX) right = 0;
+
+  const croppedW = w - left - right;
+  const croppedH = h - top - bottom;
+  if (croppedW < Math.floor(w * 0.6) || croppedH < Math.floor(h * 0.6)) {
+    return { x: 0, y: 0, w, h };
+  }
+
+  return { x: left, y: top, w: croppedW, h: croppedH };
 }
 
 type CinemaAnalyzerAppProps = {
@@ -262,37 +371,82 @@ export default function CinemaAnalyzerApp({
     const url = URL.createObjectURL(file);
     const img = new Image();
     img.onload = () => {
-      const W = img.naturalWidth;
-      const H = img.naturalHeight;
+      const sourceW = img.naturalWidth;
+      const sourceH = img.naturalHeight;
       const tmp = document.createElement("canvas");
-      tmp.width = W;
-      tmp.height = H;
+      tmp.width = sourceW;
+      tmp.height = sourceH;
       tmp.getContext("2d")!.drawImage(img, 0, 0);
-      const px = tmp.getContext("2d")!.getImageData(0, 0, W, H);
-      const tc2 = document.createElement("canvas");
-      tc2.width = 280;
-      tc2.height = 158;
-      tc2.getContext("2d")!.drawImage(img, 0, 0, 280, 158);
-      const thumb = tc2.toDataURL("image/jpeg", 0.75);
-      setPages((prev) => {
-        if (!prev[idx]) return prev;
-        const copy = [...prev];
-        copy[idx] = {
-          ...copy[idx],
-          imageURL: url,
-          imgEl: img,
-          W,
-          H,
-          px,
-          thumb,
-          markers: [],
-          strokes: [],
-          textNotes: [],
-          drawOverlaySize: null,
-        };
-        return copy;
-      });
-      setCurTab((t) => (t === "data" || t === "note" ? t : "data"));
+      const pxAll = tmp.getContext("2d")!.getImageData(0, 0, sourceW, sourceH);
+      const cropRect = detectLetterboxCropRect(pxAll, sourceW, sourceH);
+      const cropApplied =
+        cropRect.x > 0 ||
+        cropRect.y > 0 ||
+        cropRect.w < sourceW ||
+        cropRect.h < sourceH;
+      let workCanvas = tmp;
+      let W = sourceW;
+      let H = sourceH;
+      if (cropApplied) {
+        const cropped = document.createElement("canvas");
+        cropped.width = cropRect.w;
+        cropped.height = cropRect.h;
+        cropped
+          .getContext("2d")!
+          .drawImage(
+            tmp,
+            cropRect.x,
+            cropRect.y,
+            cropRect.w,
+            cropRect.h,
+            0,
+            0,
+            cropRect.w,
+            cropRect.h,
+          );
+        workCanvas = cropped;
+        W = cropRect.w;
+        H = cropRect.h;
+      }
+      const px = workCanvas.getContext("2d")!.getImageData(0, 0, W, H);
+      const analysisDataUrl = workCanvas.toDataURL("image/jpeg", 0.92);
+      const analysisImg = new Image();
+      analysisImg.onload = () => {
+        const tc2 = document.createElement("canvas");
+        tc2.width = 280;
+        tc2.height = 158;
+        tc2.getContext("2d")!.drawImage(analysisImg, 0, 0, 280, 158);
+        const thumb = tc2.toDataURL("image/jpeg", 0.75);
+        setPages((prev) => {
+          if (!prev[idx]) return prev;
+          const copy = [...prev];
+          copy[idx] = {
+            ...copy[idx],
+            imageURL: analysisDataUrl,
+            imgEl: analysisImg,
+            W,
+            H,
+            sourceImageURL: url,
+            sourceW,
+            sourceH,
+            cropApplied,
+            cropRatioLabel: `${(W / H).toFixed(2)}:1`,
+            px,
+            thumb,
+            markers: [],
+            strokes: [],
+            textNotes: [],
+            drawOverlaySize: null,
+          };
+          return copy;
+        });
+        if (cropApplied) {
+          setPdfToast(`레터박스 감지: ${(W / H).toFixed(2)}:1로 크롭되었습니다`);
+          window.setTimeout(() => setPdfToast(null), 2600);
+        }
+        setCurTab((t) => (t === "data" || t === "note" ? t : "data"));
+      };
+      analysisImg.src = analysisDataUrl;
     };
     img.src = url;
   };
@@ -788,6 +942,13 @@ export default function CinemaAnalyzerApp({
           ["Color", m.color],
           ["Lens", m.lens],
           ["Camera", m.camera],
+          ["AR", p?.cropRatioLabel ?? (p?.W && p?.H ? `${(p.W / p.H).toFixed(2)}:1` : "—")],
+          [
+            "Crop",
+            p?.cropApplied
+              ? `ON (${p.sourceW}x${p.sourceH}→${p.W}x${p.H})`
+              : "OFF",
+          ],
         ].map(([k, v]) => (
           <div key={String(k)} className="shrink-0 whitespace-nowrap">
             <span className="text-[#888]">{k} : </span>

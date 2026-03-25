@@ -32,9 +32,16 @@ import {
   useCallback,
   useEffect,
   useLayoutEffect,
+  useMemo,
   useRef,
   useState,
 } from "react";
+import { AuthStatusControls } from "@/app/components/AuthStatusControls";
+import { supabaseClient } from "@/lib/supabase/client";
+import {
+  DEFAULT_PROJECTS_STORAGE_BUCKET,
+  uploadDataUrlAsJpegPublic,
+} from "@/lib/supabase/storage";
 
 function createEmptyPage(): CinemaPage {
   return {
@@ -165,11 +172,28 @@ function detectLetterboxCropRect(px: ImageData, w: number, h: number) {
 type CinemaAnalyzerAppProps = {
   projectName: string;
   onLeaveProject: () => void;
+  /** DB에서 주입한 초기 pages(2단계 A-2) */
+  initialPages?: CinemaPage[];
+  initialCurIdx?: number;
+  /** DB 모드에서는 로컬 persistence(load/save)를 건너뜁니다. */
+  skipPersistence?: boolean;
+  /** DB 모드: 프로젝트 ID */
+  dbProjectId?: string;
+  /** DB 모드: 유저 ID */
+  dbUserId?: string;
+  /** DB 모드: Storage bucket (선택) */
+  dbStorageBucket?: string;
 };
 
 export default function CinemaAnalyzerApp({
   projectName,
   onLeaveProject,
+  initialPages,
+  initialCurIdx,
+  skipPersistence,
+  dbProjectId,
+  dbUserId,
+  dbStorageBucket,
 }: CinemaAnalyzerAppProps) {
   const [hydrated, setHydrated] = useState(false);
   const [pages, setPages] = useState<CinemaPage[]>(() => [createEmptyPage()]);
@@ -211,8 +235,61 @@ export default function CinemaAnalyzerApp({
   const curIdxRef = useRef(curIdx);
   curIdxRef.current = curIdx;
 
+  const supabase = useMemo(() => {
+    if (!skipPersistence) return null;
+    try {
+      return supabaseClient();
+    } catch {
+      return null;
+    }
+  }, [skipPersistence]);
+
+  const existingDbPageIdsRef = useRef<Set<number>>(new Set());
+  const dbExistingInitializedRef = useRef(false);
+  const dbSyncInFlightRef = useRef(false);
+  const dbSyncRequestedRef = useRef(false);
+
+  useEffect(() => {
+    if (!skipPersistence) return;
+    if (!initialPages) return;
+    setHydrated(false);
+    setPages(initialPages.length ? initialPages : [createEmptyPage()]);
+    setCurIdx(Math.max(0, Math.min(initialCurIdx ?? 0, Math.max(0, initialPages.length - 1))));
+    setHydrated(true);
+  }, [skipPersistence, initialPages, initialCurIdx]);
+
+  useEffect(() => {
+    if (!skipPersistence) return;
+    if (!supabase) return;
+    if (!dbProjectId) return;
+    // 초기 DB pages id 목록을 캐시해서 삭제(sync)까지 맞춥니다.
+    if (!hydrated) return;
+
+    let alive = true;
+    (async () => {
+      const { data, error } = await supabase
+        .from("pages")
+        .select("id")
+        .eq("project_id", dbProjectId);
+      if (!alive) return;
+      if (error) throw error;
+      const ids = (data as Array<{ id: number }> | null)?.map((r) => r.id) ?? [];
+      existingDbPageIdsRef.current = new Set(ids);
+      dbExistingInitializedRef.current = true;
+    })().catch((e) => {
+      console.error("DB page id init failed:", e);
+      existingDbPageIdsRef.current = new Set();
+      dbExistingInitializedRef.current = true;
+    });
+
+    return () => {
+      alive = false;
+    };
+  }, [skipPersistence, supabase, dbProjectId, hydrated]);
+
   useEffect(() => {
     let cancelled = false;
+    if (skipPersistence) return;
     setHydrated(false);
     (async () => {
       const raw = loadPersistedProject(projectName);
@@ -244,10 +321,11 @@ export default function CinemaAnalyzerApp({
     return () => {
       cancelled = true;
     };
-  }, [projectName]);
+  }, [projectName, skipPersistence]);
 
   useEffect(() => {
     if (!hydrated) return;
+    if (skipPersistence) return;
     const id = window.setTimeout(() => {
       try {
         savePersistedProject(projectName, {
@@ -263,7 +341,102 @@ export default function CinemaAnalyzerApp({
     return () => window.clearTimeout(id);
   }, [pages, curIdx, projectName, hydrated]);
 
-  const handleLeaveProject = () => {
+  const syncPagesToDb = useCallback(
+    async () => {
+      if (!skipPersistence) return;
+      if (!supabase) return;
+      if (!dbProjectId) return;
+      if (!dbUserId) return;
+
+      const bucket = dbStorageBucket ?? DEFAULT_PROJECTS_STORAGE_BUCKET;
+      const currentPages = pagesRef.current;
+      const currentIds = new Set<number>(currentPages.map((pg) => pg.id));
+
+      const records: Array<{
+        id: number;
+        project_id: string;
+        image_url: string | null;
+        meta: FilmMeta;
+        markers: typeof currentPages[number]["markers"];
+        strokes: typeof currentPages[number]["strokes"];
+        notes: typeof currentPages[number]["textNotes"];
+      }> = [];
+
+      for (const pg of currentPages) {
+        const storagePath = `${dbUserId}/${dbProjectId}/${pg.id}.jpg`;
+        const publicUrl = supabase.storage
+          .from(bucket)
+          .getPublicUrl(storagePath).data.publicUrl;
+
+        let image_url: string | null = null;
+        if (pg.imageURL) {
+          if (pg.imageURL.startsWith("data:")) {
+            image_url = await uploadDataUrlAsJpegPublic(supabase, {
+              bucket,
+              path: storagePath,
+              dataUrl: pg.imageURL,
+            });
+          } else {
+            // import 로드된 값은 보통 DB에 저장된 Public URL.
+            image_url = publicUrl;
+          }
+        }
+
+        records.push({
+          id: pg.id,
+          project_id: dbProjectId,
+          image_url,
+          meta: pg.meta,
+          markers: pg.markers,
+          strokes: pg.strokes,
+          notes: pg.textNotes,
+        });
+      }
+
+      try {
+        const { error: upErr } = await supabase
+          .from("pages")
+          .upsert(records as any, { onConflict: "id" });
+        if (upErr) throw upErr;
+
+        // 제거된 페이지 삭제(현재 pages[] 기준으로 sync)
+        if (dbExistingInitializedRef.current) {
+          const removed = [...existingDbPageIdsRef.current].filter(
+            (id) => !currentIds.has(id),
+          );
+          if (removed.length) {
+            const { error: delErr } = await supabase
+              .from("pages")
+              .delete()
+              .in("id", removed)
+              .eq("project_id", dbProjectId);
+            if (delErr) throw delErr;
+          }
+        }
+
+        existingDbPageIdsRef.current = currentIds;
+      } catch (e) {
+        console.error("DB sync failed:", e);
+      }
+    },
+    [
+      skipPersistence,
+      supabase,
+      dbProjectId,
+      dbUserId,
+      dbStorageBucket,
+      pagesRef,
+    ],
+  );
+
+  const handleLeaveProject = async () => {
+    if (skipPersistence) {
+      if (supabase && dbProjectId && dbUserId) {
+        await syncPagesToDb();
+      }
+      onLeaveProject();
+      return;
+    }
     try {
       savePersistedProject(projectName, {
         version: 1,
@@ -277,6 +450,50 @@ export default function CinemaAnalyzerApp({
     }
     onLeaveProject();
   };
+
+  useEffect(() => {
+    if (!hydrated) return;
+    if (!skipPersistence) return;
+    if (!supabase) return;
+    if (!dbProjectId) return;
+    if (!dbUserId) return;
+
+    const id = window.setTimeout(() => {
+      if (dbSyncInFlightRef.current) {
+        dbSyncRequestedRef.current = true;
+        return;
+      }
+
+      dbSyncInFlightRef.current = true;
+      void (async () => {
+        try {
+          await syncPagesToDb();
+        } finally {
+          dbSyncInFlightRef.current = false;
+          if (dbSyncRequestedRef.current) {
+            dbSyncRequestedRef.current = false;
+            dbSyncInFlightRef.current = true;
+            try {
+              await syncPagesToDb();
+            } finally {
+              dbSyncInFlightRef.current = false;
+            }
+          }
+        }
+      })();
+    }, 900);
+
+    return () => window.clearTimeout(id);
+  }, [
+    hydrated,
+    skipPersistence,
+    supabase,
+    dbProjectId,
+    dbUserId,
+    pages,
+    curIdx,
+    syncPagesToDb,
+  ]);
 
   useEffect(() => {
     if (curTab !== "meta") return;
@@ -883,7 +1100,7 @@ export default function CinemaAnalyzerApp({
         </div>
         <button
           type="button"
-          onClick={handleLeaveProject}
+          onClick={() => void handleLeaveProject()}
           className="h-full shrink-0 border-r border-[#1c1c1c] px-[12px] text-[9px] tracking-[1px] text-[#888] hover:bg-[#0d0d0d] hover:text-[#fff]"
         >
           ← PROJECTS
@@ -916,6 +1133,7 @@ export default function CinemaAnalyzerApp({
           </button>
         ))}
         <div className="flex-1" />
+        <AuthStatusControls />
         <button
           type="button"
           disabled={exportBusy}

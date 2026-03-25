@@ -9,6 +9,7 @@ import {
   savePersistedProject,
 } from "@/lib/cinema-persistence";
 import { useCallback, useEffect, useState } from "react";
+import { AuthStatusControls } from "@/app/components/AuthStatusControls";
 
 export default function ProjectLanding({
   onOpenProject,
@@ -70,17 +71,23 @@ export default function ProjectLanding({
   };
 
   return (
-    <div className="flex min-h-full flex-col items-center justify-center gap-10 bg-black px-6 py-16 text-[#bbb]">
-      <div className="text-center">
-        <h1 className="text-[11px] tracking-[6px] text-[#888]">
+    <div className="flex min-h-screen flex-col bg-black px-6 py-16 text-[#bbb]">
+      <header className="flex h-[38px] shrink-0 items-center border-b border-[#1c1c1c] bg-[#030303]">
+        <div className="flex h-full items-center border-r border-[#1c1c1c] px-[14px] text-[11px] tracking-[4px] text-[#888]">
           FRAME METER
-        </h1>
-        <p className="mt-3 text-[9px] tracking-[2px] text-[#888]">
-          프로젝트 단위로 작업이 저장됩니다 (이 브라우저 / 이 기기)
-        </p>
-      </div>
+        </div>
+        <div className="flex-1" />
+        <AuthStatusControls />
+      </header>
 
-      <div className="w-full max-w-[360px] border border-[#1c1c1c] bg-[#050505] p-5">
+      <div className="flex flex-1 items-center justify-center gap-10">
+        <div className="text-center">
+          <p className="mt-3 text-[9px] tracking-[2px] text-[#888]">
+            프로젝트 단위로 작업이 저장됩니다 (이 브라우저 / 이 기기)
+          </p>
+        </div>
+
+        <div className="w-full max-w-[360px] border border-[#1c1c1c] bg-[#050505] p-5">
         <div className="mb-3 text-[8px] tracking-[3px] text-[#888]">
           NEW PROJECT
         </div>
@@ -100,7 +107,7 @@ export default function ProjectLanding({
         </button>
       </div>
 
-      <div className="w-full max-w-[360px]">
+        <div className="w-full max-w-[360px]">
         <div className="mb-3 text-[8px] tracking-[3px] text-[#888]">
           OPEN PROJECT
         </div>
@@ -140,6 +147,7 @@ export default function ProjectLanding({
             ))}
           </ul>
         )}
+        </div>
       </div>
     </div>
   );

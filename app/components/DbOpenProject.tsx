@@ -67,7 +67,7 @@ export default function DbOpenProject({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [projectTitle, setProjectTitle] = useState<string>("PROJECT");
-  const [initialPages, setInitialPages] = useState<CinemaPage[] | null>(null);
+  const [pages, setPages] = useState<CinemaPage[]>([]);
   const [dbUserId, setDbUserId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -83,6 +83,7 @@ export default function DbOpenProject({
 
       setLoading(true);
       setError(null);
+      setPages([]);
       try {
         const sessionRes = await supabase.auth.getSession();
         if (!sessionRes.data.session) {
@@ -90,6 +91,7 @@ export default function DbOpenProject({
           window.location.replace(
             `/auth/login?next=${encodeURIComponent(nextUrl)}`,
           );
+          alive = false;
           return;
         }
         const userId = sessionRes.data.session.user.id;
@@ -163,7 +165,7 @@ export default function DbOpenProject({
         if (!alive) return;
         setProjectTitle((proj as any)?.title || "PROJECT");
         setDbUserId(userId);
-        setInitialPages(mapped.length ? mapped : [createEmptyPageFallback()]);
+        setPages(mapped.length ? mapped : [createEmptyPageFallback()]);
       } catch (e) {
         if (!alive) return;
         setError(e instanceof Error ? e.message : String(e));
@@ -229,14 +231,12 @@ export default function DbOpenProject({
     );
   }
 
-  if (!initialPages) return null;
-
   return (
     <CinemaAnalyzerApp
       key={projectId}
       projectName={projectTitle}
       onLeaveProject={onLeaveProject}
-      initialPages={initialPages}
+      initialPages={pages}
       initialCurIdx={0}
       skipPersistence
       dbProjectId={projectId}

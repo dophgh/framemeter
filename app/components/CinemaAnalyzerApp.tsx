@@ -348,52 +348,63 @@ export default function CinemaAnalyzerApp({
       if (!dbProjectId) return;
       if (!dbUserId) return;
 
-      const bucket = dbStorageBucket ?? DEFAULT_PROJECTS_STORAGE_BUCKET;
-      const currentPages = pagesRef.current;
-      const currentIds = new Set<number>(currentPages.map((pg) => pg.id));
+      try {
+        const bucket = dbStorageBucket ?? DEFAULT_PROJECTS_STORAGE_BUCKET;
+        const currentPages = pagesRef.current;
+        const currentIds = new Set<number>(
+          currentPages.map((pg) => pg.id),
+        );
 
-      const records: Array<{
-        id: number;
-        project_id: string;
-        image_url: string | null;
-        meta: FilmMeta;
-        markers: typeof currentPages[number]["markers"];
-        strokes: typeof currentPages[number]["strokes"];
-        notes: typeof currentPages[number]["textNotes"];
-      }> = [];
+        const records: Array<{
+          id: number;
+          project_id: string;
+          image_url: string | null;
+          meta: FilmMeta;
+          markers: typeof currentPages[number]["markers"];
+          strokes: typeof currentPages[number]["strokes"];
+          notes: typeof currentPages[number]["textNotes"];
+        }> = [];
 
-      for (const pg of currentPages) {
-        const storagePath = `${dbUserId}/${dbProjectId}/${pg.id}.jpg`;
-        const publicUrl = supabase.storage
-          .from(bucket)
-          .getPublicUrl(storagePath).data.publicUrl;
-
-        let image_url: string | null = null;
-        if (pg.imageURL) {
-          if (pg.imageURL.startsWith("data:")) {
-            image_url = await uploadDataUrlAsJpegPublic(supabase, {
-              bucket,
-              path: storagePath,
-              dataUrl: pg.imageURL,
-            });
-          } else {
-            // import 로드된 값은 보통 DB에 저장된 Public URL.
-            image_url = publicUrl;
+        for (const pg of currentPages) {
+          const storagePath = `${dbUserId}/${dbProjectId}/${pg.id}.jpg`;
+          let publicUrl: string | null = null;
+          try {
+            publicUrl = supabase.storage
+              .from(bucket)
+              .getPublicUrl(storagePath).data.publicUrl;
+          } catch (e) {
+            console.error("Storage getPublicUrl failed:", e);
           }
+
+          let image_url: string | null = null;
+          try {
+            if (pg.imageURL) {
+              if (pg.imageURL.startsWith("data:")) {
+                image_url = await uploadDataUrlAsJpegPublic(supabase, {
+                  bucket,
+                  path: storagePath,
+                  dataUrl: pg.imageURL,
+                });
+              } else {
+                // import 로드된 값은 보통 DB에 저장된 Public URL.
+                image_url = publicUrl;
+              }
+            }
+          } catch (e) {
+            console.error("Storage upload failed:", e);
+          }
+
+          records.push({
+            id: pg.id,
+            project_id: dbProjectId,
+            image_url,
+            meta: pg.meta,
+            markers: pg.markers,
+            strokes: pg.strokes,
+            notes: pg.textNotes,
+          });
         }
 
-        records.push({
-          id: pg.id,
-          project_id: dbProjectId,
-          image_url,
-          meta: pg.meta,
-          markers: pg.markers,
-          strokes: pg.strokes,
-          notes: pg.textNotes,
-        });
-      }
-
-      try {
         const { error: upErr } = await supabase
           .from("pages")
           .upsert(records as any, { onConflict: "id" });
@@ -432,7 +443,11 @@ export default function CinemaAnalyzerApp({
   const handleLeaveProject = async () => {
     if (skipPersistence) {
       if (supabase && dbProjectId && dbUserId) {
-        await syncPagesToDb();
+        try {
+          await syncPagesToDb();
+        } catch (e) {
+          console.error("Leave sync failed:", e);
+        }
       }
       onLeaveProject();
       return;
@@ -468,6 +483,8 @@ export default function CinemaAnalyzerApp({
       void (async () => {
         try {
           await syncPagesToDb();
+        } catch (e) {
+          console.error("Debounced sync failed:", e);
         } finally {
           dbSyncInFlightRef.current = false;
           if (dbSyncRequestedRef.current) {

@@ -1,14 +1,12 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
 import DbOpenProject from "@/app/components/DbOpenProject";
 import { AuthStatusControls } from "@/app/components/AuthStatusControls";
 import { supabaseClient } from "@/lib/supabase/client";
 
 export default function HomeClient() {
   const [dbProjectId, setDbProjectId] = useState<string | null>(null);
-  const router = useRouter();
   const supabase = useMemo(() => supabaseClient(), []);
   const [checking, setChecking] = useState(true);
 
@@ -45,7 +43,7 @@ export default function HomeClient() {
         const { data } = await supabase.auth.getSession();
         if (!alive) return;
         if (data.session) {
-          router.replace("/dashboard");
+          window.location.replace("/dashboard");
           return;
         }
         setChecking(false);
@@ -57,7 +55,7 @@ export default function HomeClient() {
     return () => {
       alive = false;
     };
-  }, [dbProjectId, supabase, router]);
+  }, [dbProjectId, supabase]);
 
   if (checking) {
     return (

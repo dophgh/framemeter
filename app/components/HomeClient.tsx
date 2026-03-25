@@ -1,24 +1,26 @@
 "use client";
 
-import { useState } from "react";
-import { useEffect } from "react";
-import CinemaAnalyzerApp from "@/app/components/CinemaAnalyzerApp";
-import ProjectLanding from "@/app/components/ProjectLanding";
+import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import DbOpenProject from "@/app/components/DbOpenProject";
+import { AuthStatusControls } from "@/app/components/AuthStatusControls";
+import { supabaseClient } from "@/lib/supabase/client";
 
 export default function HomeClient() {
-  const [activeProject, setActiveProject] = useState<string | null>(null);
   const [dbProjectId, setDbProjectId] = useState<string | null>(null);
+  const router = useRouter();
+  const supabase = useMemo(() => supabaseClient(), []);
+  const [checking, setChecking] = useState(true);
 
   useEffect(() => {
     const sp = new URLSearchParams(window.location.search);
     const pid = sp.get("projectId");
     if (pid) setDbProjectId(pid);
+    setChecking(false);
   }, []);
 
   const leaveDbProject = () => {
     setDbProjectId(null);
-    setActiveProject(null);
     window.history.replaceState({}, "", "/");
   };
 
@@ -31,15 +33,56 @@ export default function HomeClient() {
     );
   }
 
-  if (!activeProject) {
-    return <ProjectLanding onOpenProject={setActiveProject} />;
+  useEffect(() => {
+    if (dbProjectId) return;
+    if (!supabase) {
+      setChecking(false);
+      return;
+    }
+    let alive = true;
+    (async () => {
+      try {
+        const { data } = await supabase.auth.getSession();
+        if (!alive) return;
+        if (data.session) {
+          router.replace("/dashboard");
+          return;
+        }
+        setChecking(false);
+      } catch {
+        if (!alive) return;
+        setChecking(false);
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [dbProjectId, supabase, router]);
+
+  if (checking) {
+    return (
+      <div className="min-h-screen bg-black">
+        <div className="flex min-h-screen items-center justify-center text-[9px] tracking-[3px] text-[#888]">
+          LOADING…
+        </div>
+      </div>
+    );
   }
 
   return (
-    <CinemaAnalyzerApp
-      key={activeProject}
-      projectName={activeProject}
-      onLeaveProject={() => setActiveProject(null)}
-    />
+    <div className="flex min-h-screen flex-col bg-black px-6 py-16 text-[#ccc]">
+      <header className="flex h-[38px] shrink-0 items-center border-b border-[#1c1c1c] bg-[#030303]">
+        <div className="flex h-full items-center border-r border-[#1c1c1c] px-[14px] text-[11px] tracking-[4px] text-[#888]">
+          FRAME METER
+        </div>
+        <div className="flex-1" />
+        <AuthStatusControls />
+      </header>
+      <div className="flex flex-1 items-center justify-center">
+        <div className="text-center text-[9px] text-[#888]">
+          로그인 후 대시보드에서 프로젝트를 관리하세요.
+        </div>
+      </div>
+    </div>
   );
 }

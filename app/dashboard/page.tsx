@@ -269,9 +269,6 @@ export default function DashboardPage() {
               </div>
             )}
 
-            <div className="mt-6 text-[9px] text-[#888]">
-              프로젝트를 열면 현재 편집 상태가 Supabase에 동기화됩니다. (A-3)
-            </div>
           </div>
         ) : (
           <div className="mt-10 flex justify-center">

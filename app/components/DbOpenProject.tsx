@@ -72,110 +72,127 @@ export default function DbOpenProject({
 
   useEffect(() => {
     let alive = true;
-    const run = async () => {
-      if (!supabase) {
-        setError(
-          "Supabase 설정이 필요합니다. `.env.local`에 NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY를 추가해 주세요.",
-        );
-        setLoading(false);
-        return;
-      }
-
+    async function load() {
+      // 렌더 사이클과 충돌하지 않도록, 상태 업데이트는 여기서만 수행하고
+      // (조건문 안의 setState를 피하기 위해) 로컬 변수에 결과를 모은 뒤 마지막에 한번에 반영합니다.
       setLoading(true);
       setError(null);
       setPages([]);
+
+      let nextError: string | null = null;
+      let nextTitle = "PROJECT";
+      let nextDbUserId: string | null = null;
+      let nextPages: CinemaPage[] = [];
+
       try {
-        const sessionRes = await supabase.auth.getSession();
-        if (!sessionRes.data.session) {
-          const nextUrl = `/?projectId=${encodeURIComponent(projectId)}`;
-          window.location.replace(
-            `/auth/login?next=${encodeURIComponent(nextUrl)}`,
-          );
-          alive = false;
-          return;
-        }
-        const userId = sessionRes.data.session.user.id;
-
-        const { data: proj, error: projErr } = await supabase
-          .from("projects")
-          .select("id,title")
-          .eq("id", projectId)
-          .single();
-        if (projErr) throw projErr;
-        if (!proj) throw new Error("프로젝트를 찾을 수 없습니다.");
-
-        const { data: rows, error: pagesErr } = await supabase
-          .from("pages")
-          .select("id,image_url,meta,markers,strokes,notes")
-          .eq("project_id", projectId)
-          .order("id", { ascending: true });
-        if (pagesErr) throw pagesErr;
-
-        const dbPages = (rows as DbPageRow[]) ?? [];
-        const mapped: CinemaPage[] = [];
-
-        for (const row of dbPages) {
-          const pageId =
-            typeof row.id === "string" ? Number(row.id) || Date.now() : row.id;
-
-          if (row.image_url) {
-            const loaded = await loadImageAndPixels(row.image_url);
-            mapped.push({
-              id: pageId,
-              imageURL: row.image_url,
-              imgEl: loaded.imgEl,
-              px: loaded.px,
-              W: loaded.W,
-              H: loaded.H,
-              sourceImageURL: null,
-              sourceW: loaded.W,
-              sourceH: loaded.H,
-              cropApplied: false,
-              cropRatioLabel: null,
-              meta: row.meta ?? defMeta(),
-              markers: row.markers ?? [],
-              strokes: row.strokes ?? [],
-              textNotes: row.notes ?? [],
-              drawOverlaySize: null,
-              thumb: loaded.thumb,
-            });
-          } else {
-            mapped.push({
-              id: pageId,
-              imageURL: null,
-              imgEl: null,
-              px: null,
-              W: 0,
-              H: 0,
-              sourceImageURL: null,
-              sourceW: 0,
-              sourceH: 0,
-              cropApplied: false,
-              cropRatioLabel: null,
-              meta: row.meta ?? defMeta(),
-              markers: row.markers ?? [],
-              strokes: row.strokes ?? [],
-              textNotes: row.notes ?? [],
-              drawOverlaySize: null,
-              thumb: null,
-            });
+        if (!supabase) {
+          nextError =
+            "Supabase 설정이 필요합니다. `.env.local`에 NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY를 추가해 주세요.";
+        } else {
+          const sessionRes = await supabase.auth.getSession();
+          if (!sessionRes.data.session) {
+            const nextUrl = `/?projectId=${encodeURIComponent(
+              projectId,
+            )}`;
+            // 더 이상 state update를 하지 않기 위해 alive를 중단 플래그로 사용합니다.
+            alive = false;
+            window.location.replace(
+              `/auth/login?next=${encodeURIComponent(nextUrl)}`,
+            );
+            return;
           }
+
+          const userId = sessionRes.data.session.user.id;
+
+          const { data: proj, error: projErr } = await supabase
+            .from("projects")
+            .select("id,title")
+            .eq("id", projectId)
+            .single();
+          if (projErr) throw projErr;
+          if (!proj) throw new Error("프로젝트를 찾을 수 없습니다.");
+
+          const { data: rows, error: pagesErr } = await supabase
+            .from("pages")
+            .select("id,image_url,meta,markers,strokes,notes")
+            .eq("project_id", projectId)
+            .order("id", { ascending: true });
+          if (pagesErr) throw pagesErr;
+
+          nextTitle = (proj as any)?.title || "PROJECT";
+          nextDbUserId = userId;
+
+          const dbPages = (rows as DbPageRow[]) ?? [];
+          const mapped: CinemaPage[] = [];
+
+          for (const row of dbPages) {
+            const pageId =
+              typeof row.id === "string"
+                ? Number(row.id) || Date.now()
+                : row.id;
+
+            if (row.image_url) {
+              const loaded = await loadImageAndPixels(row.image_url);
+              mapped.push({
+                id: pageId,
+                imageURL: row.image_url,
+                imgEl: loaded.imgEl,
+                px: loaded.px,
+                W: loaded.W,
+                H: loaded.H,
+                sourceImageURL: null,
+                sourceW: loaded.W,
+                sourceH: loaded.H,
+                cropApplied: false,
+                cropRatioLabel: null,
+                meta: row.meta ?? defMeta(),
+                markers: row.markers ?? [],
+                strokes: row.strokes ?? [],
+                textNotes: row.notes ?? [],
+                drawOverlaySize: null,
+                thumb: loaded.thumb,
+              });
+            } else {
+              mapped.push({
+                id: pageId,
+                imageURL: null,
+                imgEl: null,
+                px: null,
+                W: 0,
+                H: 0,
+                sourceImageURL: null,
+                sourceW: 0,
+                sourceH: 0,
+                cropApplied: false,
+                cropRatioLabel: null,
+                meta: row.meta ?? defMeta(),
+                markers: row.markers ?? [],
+                strokes: row.strokes ?? [],
+                textNotes: row.notes ?? [],
+                drawOverlaySize: null,
+                thumb: null,
+              });
+            }
+          }
+
+          nextPages = mapped.length ? mapped : [createEmptyPageFallback()];
         }
-
-        if (!alive) return;
-        setProjectTitle((proj as any)?.title || "PROJECT");
-        setDbUserId(userId);
-        setPages(mapped.length ? mapped : [createEmptyPageFallback()]);
       } catch (e) {
-        if (!alive) return;
-        setError(e instanceof Error ? e.message : String(e));
-      } finally {
-        if (!alive) return;
-        setLoading(false);
+        nextError = e instanceof Error ? e.message : String(e);
+        nextPages = [];
       }
-    };
 
-    run();
+      // unmount/redirect 이후 state update 방지
+      if (!alive) return;
+
+      setProjectTitle(nextTitle);
+      setDbUserId(nextDbUserId);
+      setPages(nextPages);
+      setError(nextError);
+      setLoading(false);
+    }
+
+    load();
     return () => {
       alive = false;
     };

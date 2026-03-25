@@ -29,22 +29,22 @@ export function AuthStatusControls({
 
     let alive = true;
     setLoading(true);
-    supabase.auth.getSession().then(({ data }) => {
-      if (!alive) return;
-      setEmail(data.session?.user?.email ?? null);
-      setLoading(false);
-    });
-
-    const { data } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        setEmail(session?.user?.email ?? null);
+    supabase.auth
+      .getSession()
+      .then(({ data }) => {
+        if (!alive) return;
+        setEmail(data.session?.user?.email ?? null);
         setLoading(false);
-      },
-    );
+      })
+      .catch(() => {
+        if (!alive) return;
+        setEmail(null);
+        setLoading(false);
+      });
 
+    // onAuthStateChange 구독을 제거: 여러 컴포넌트에서 중복 구독되면 auth 상태가 꼬일 수 있음
     return () => {
       alive = false;
-      data.subscription.unsubscribe();
     };
   }, [supabase]);
 

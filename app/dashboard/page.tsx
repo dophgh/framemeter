@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { supabaseClient } from "@/lib/supabase/client";
+import { AuthStatusControls } from "@/app/components/AuthStatusControls";
 
 type ProjectRow = {
   id: string | number;
@@ -12,7 +12,6 @@ type ProjectRow = {
 };
 
 export default function DashboardPage() {
-  const router = useRouter();
   const supabase = useMemo(() => supabaseClient(), []);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -73,7 +72,9 @@ export default function DashboardPage() {
     };
   }, [supabase]);
 
-  const goLogin = () => router.replace("/auth/login");
+  const goLogin = () => {
+    window.location.replace("/auth/login");
+  };
 
   const refreshProjects = async () => {
     if (!supabase) return;
@@ -120,7 +121,9 @@ export default function DashboardPage() {
       setNewTitle("");
       const id = data?.id;
       if (!id) throw new Error("프로젝트 생성 결과가 비어 있습니다.");
-      router.replace(`/?projectId=${encodeURIComponent(String(id))}`);
+      window.location.replace(
+        `/?projectId=${encodeURIComponent(String(id))}`,
+      );
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -169,17 +172,7 @@ export default function DashboardPage() {
               PROJECTS DASHBOARD
             </div>
           </div>
-          {email ? (
-            <div className="text-[9px] text-[#888]">Signed in</div>
-          ) : (
-            <button
-              type="button"
-              onClick={goLogin}
-              className="h-[38px] border border-[#1c1c1c] bg-[#0d0d0d] px-[12px] text-[9px] tracking-[2px] text-[#888] hover:border-[#666] hover:text-white"
-            >
-              LOGIN
-            </button>
-          )}
+          <AuthStatusControls />
         </div>
 
         {error ? (
@@ -239,10 +232,8 @@ export default function DashboardPage() {
                       <button
                         type="button"
                         onClick={() =>
-                          router.replace(
-                            `/?projectId=${encodeURIComponent(
-                              String(p.id),
-                            )}`,
+                          window.location.replace(
+                            `/?projectId=${encodeURIComponent(String(p.id))}`,
                           )
                         }
                         className="h-[28px] rounded-sm border border-[#1c1c1c] bg-[#0d0d0d] px-3 text-[8px] tracking-[1px] text-[#555] hover:border-[#666] hover:text-[#fff]"

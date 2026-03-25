@@ -22,15 +22,6 @@ export default function HomeClient() {
     window.history.replaceState({}, "", "/");
   };
 
-  if (dbProjectId) {
-    return (
-      <DbOpenProject
-        projectId={dbProjectId}
-        onLeaveProject={leaveDbProject}
-      />
-    );
-  }
-
   useEffect(() => {
     if (dbProjectId) return;
     if (!supabase) {
@@ -65,6 +56,12 @@ export default function HomeClient() {
           LOADING…
         </div>
       </div>
+    );
+  }
+
+  if (dbProjectId) {
+    return (
+      <DbOpenProject projectId={dbProjectId} onLeaveProject={leaveDbProject} />
     );
   }
 

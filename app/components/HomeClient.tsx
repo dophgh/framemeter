@@ -43,6 +43,7 @@ export default function HomeClient() {
         const { data } = await supabase.auth.getSession();
         if (!alive) return;
         if (data.session) {
+          setChecking(false);
           window.location.replace("/dashboard");
           return;
         }

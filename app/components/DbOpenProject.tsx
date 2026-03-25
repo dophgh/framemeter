@@ -161,7 +161,7 @@ export default function DbOpenProject({
         }
 
         if (!alive) return;
-        setProjectTitle(proj.title || "PROJECT");
+        setProjectTitle((proj as any)?.title || "PROJECT");
         setDbUserId(userId);
         setInitialPages(mapped.length ? mapped : [createEmptyPageFallback()]);
       } catch (e) {

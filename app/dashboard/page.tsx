@@ -50,7 +50,7 @@ export default function DashboardPage() {
           return;
         }
 
-        const { data, error: projErr } = await supabase
+        const { data, error: projErr } = await (supabase as any)
           .from("projects")
           .select("id,title,created_at")
           .eq("user_id", userId)
@@ -81,7 +81,7 @@ export default function DashboardPage() {
     setLoading(true);
     setError(null);
     try {
-      const { data, error: projErr } = await supabase
+      const { data, error: projErr } = await (supabase as any)
         .from("projects")
         .select("id,title,created_at")
         .eq("user_id", userId)
@@ -110,7 +110,7 @@ export default function DashboardPage() {
     setCreateBusy(true);
     setError(null);
     try {
-      const { data, error: insErr } = await supabase
+      const { data, error: insErr } = await (supabase as any)
         .from("projects")
         .insert({ user_id: userId, title })
         .select("id,title,created_at")
@@ -137,13 +137,13 @@ export default function DashboardPage() {
     setError(null);
     setLoading(true);
     try {
-      const { error: delPagesErr } = await supabase
+      const { error: delPagesErr } = await (supabase as any)
         .from("pages")
         .delete()
         .eq("project_id", id);
       if (delPagesErr) throw delPagesErr;
 
-      const { error: delProjErr } = await supabase
+      const { error: delProjErr } = await (supabase as any)
         .from("projects")
         .delete()
         .eq("id", id)
